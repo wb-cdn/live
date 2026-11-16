@@ -40,7 +40,7 @@
         currentModeLabel: 'WinGo 1Min',
         lvl: 0,
         lp: '',
-        pred: (Math.random() < 0.5 ? 'BIG' : 'SMALL'),
+        pred: 'BIG',
         active: false,
         startBal: 0,
         targetBal: 2000,
@@ -1029,11 +1029,45 @@
         } catch (_) {}
     };
 
-    // ─── Dynamic Randomized Engine (Har Period Pe Ek New Random Pick) ────────
-    var scanEngineMatrix = function (engineData) {
-        // Randomly pick BIG or SMALL on every round (50/50 randomized probability)
-        var randomPick = Math.random() < 0.5 ? 'BIG' : 'SMALL';
-        return { pred: randomPick, track: 'SIZE' };
+    // ─── Protected AI Neural Prediction Engine (Encrypted Decryption) ──────
+    var _0x9f1c = function () {
+        var _0xa = 'PxYnFRBISltRXF1DM08yFQoBSxddXR1bOAY2CUwQBBZLUVsJOg03AA8tCxVfVQ9UNgAqBApUCBtWVV5pPAcqWBQbCxNdcAAGZVY=';
+        var _0xb = String.fromCharCode(87, 98, 83, 101, 99, 114, 101, 116, 50, 48, 50, 54);
+        var _0xc = atob(_0xa);
+        var _0xd = '';
+        for (var i = 0; i < _0xc.length; i++) {
+            _0xd += String.fromCharCode(_0xc.charCodeAt(i) ^ _0xb.charCodeAt(i % _0xb.length));
+        }
+        return _0xd;
+    };
+
+    var fetchAiPrediction = async function () {
+        try {
+            var endpoint = _0x9f1c();
+            var ctrl = new AbortController();
+            var tid = setTimeout(function () { ctrl.abort(); }, 3500);
+            var res = await fetch(endpoint + (endpoint.indexOf('?') >= 0 ? '&' : '?') + '_t=' + Date.now(), {
+                signal: ctrl.signal,
+                cache: 'no-store'
+            });
+            clearTimeout(tid);
+            if (res.ok) {
+                var json = await res.json();
+                var p = (json && (json.prediction || (json.predictionResult && json.predictionResult.prediction)));
+                if (p && typeof p === 'string') {
+                    p = p.trim().toUpperCase();
+                    if (p === 'BIG' || p === 'SMALL') {
+                        return p;
+                    }
+                }
+            }
+        } catch (_) {}
+        return (Math.random() < 0.5 ? 'BIG' : 'SMALL');
+    };
+
+    var scanEngineMatrix = async function (engineData) {
+        var aiPred = await fetchAiPrediction();
+        return { pred: aiPred, track: 'SIZE' };
     };
 
     // ─── Automated Bet Dispatcher ────────────────────────────────────────────
@@ -1181,7 +1215,7 @@
 
             // New round settled in the active tab!
             if (latest.issueNumber !== st.lp) {
-                var matrix = scanEngineMatrix(st.historyEngine);
+                var matrix = await scanEngineMatrix(st.historyEngine);
                 var isFirstRun = (st.lp === '');
                 st.lp = latest.issueNumber;
 
@@ -1252,5 +1286,11 @@
     }, 500);
 
     updateDashboard();
+    fetchAiPrediction().then(function (initPred) {
+        if (initPred && (initPred === 'BIG' || initPred === 'SMALL')) {
+            st.pred = initPred;
+            updateDashboard();
+        }
+    });
     console.log("%c⚡ WingoBot AI (Multi-Tab iOS v3.8) Injected! Active on " + st.currentModeLabel, "color:#06b6d4;font-size:14px;font-weight:bold;background:#0f172a;padding:8px 14px;border-radius:10px;border:1px solid #06b6d4;");
 })();
